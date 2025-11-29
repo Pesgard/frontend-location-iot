@@ -1,0 +1,35 @@
+# ---------- BUILD STAGE ----------
+FROM node:20 AS builder
+
+WORKDIR /app
+
+# Copiar solo lo necesario para instalar dependencias
+COPY package*.json ./
+
+# Instalar dependencias para construir
+RUN npm install
+
+# Copiar el resto del proyecto
+COPY . .
+
+# Construir la app
+RUN npm run build
+
+
+# ---------- RUNNER STAGE ----------
+FROM node:20 AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3100
+
+# Copiar solo lo necesario para producción
+COPY --from=builder /app/build ./build
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+
+EXPOSE 3100
+
+# Ejecutar SvelteKit
+CMD ["node", "build"]
